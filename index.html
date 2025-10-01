@@ -5,57 +5,39 @@
 </head>
 <body>
     <h1>Game Analytics Server</h1>
-    <p>Server is running...</p>
-    
+    <div id="status">Waiting for data...</div>
+
     <script>
-        console.log('Game analytics page loaded');
-        
-        // YOUR DISCORD WEBHOOK - MAKE SURE THIS IS CORRECT
-        const webhookURL = 'https://discord.com/api/webhooks/1422788438679224421/8SASrVfPpNjNrFOr7kYO2TNR0-Vx9D2nZBoCNYmoNHlT9Rg9tZXLqRBbDwdRR8VKpWWl';
-        
-        // Get data from URL
         const urlParams = new URLSearchParams(window.location.search);
         const encodedData = urlParams.get('data');
         
         if (encodedData) {
-            console.log('Data received:', encodedData);
+            document.getElementById('status').textContent = 'Processing data...';
             
             try {
                 // Decode the data
                 const decodedData = atob(encodedData);
                 const jsonData = JSON.parse(decodedData);
-                console.log('Decoded data:', jsonData);
                 
-                // Format the message for Discord
-                const discordMessage = {
-                    content: `🎮 **Game Event**: ${jsonData.event}\n📊 **Data**: \`\`\`json\n${JSON.stringify(jsonData, null, 2)}\n\`\`\``
-                };
+                // Create a hidden form to submit to Discord
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'https://discord.com/api/webhooks/1422788438679224421/8SASrVfPpNjNrFOr7kYO2TNR0-Vx9D2nZBoCNYmoNHlT9Rg9tZXLqRBbDwdRR8VKpWWl';
                 
-                // Send to Discord
-                fetch(webhookURL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(discordMessage)
-                })
-                .then(response => {
-                    console.log('Sent to Discord, status:', response.status);
-                    document.body.innerHTML += '<p>✅ Data sent to Discord</p>';
-                })
-                .catch(error => {
-                    console.error('Error sending to Discord:', error);
-                    document.body.innerHTML += '<p>❌ Error sending to Discord</p>';
-                });
+                const contentInput = document.createElement('input');
+                contentInput.name = 'content';
+                contentInput.value = `🎮 Game Data: ${JSON.stringify(jsonData)}`;
+                form.appendChild(contentInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                document.getElementById('status').textContent = 'Data sent to Discord!';
                 
             } catch (error) {
-                console.error('Error processing data:', error);
-                document.body.innerHTML += '<p>❌ Error processing data</p>';
+                document.getElementById('status').textContent = 'Error: ' + error.message;
             }
-        } else {
-            console.log('No data received');
         }
     </script>
 </body>
 </html>
-
