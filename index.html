@@ -1,42 +1,139 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Game Analytics</title>
+    <title>Space Game Analytics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+        .container {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #2d5a2d; border: 1px solid #4caf50; }
+        .error { background: #5a2d2d; border: 1px solid #f44336; }
+        .info { background: #2d4a5a; border: 1px solid #2196f3; }
+    </style>
 </head>
 <body>
-    <h1>Game Analytics Server</h1>
-    <div id="status">Waiting for data...</div>
+    <div class="container">
+        <h1>🚀 Space Game Analytics</h1>
+        <p>Game telemetry and performance tracking server</p>
+        
+        <div id="statusArea">
+            <div class="status info" id="defaultStatus">
+                Server is running and ready to receive game data...
+            </div>
+        </div>
+    </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const encodedData = urlParams.get('data');
+        // YOUR DISCORD WEBHOOK - MAKE SURE THIS IS CORRECT
+        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1422788438679224421/8SASrVfPpNjNrFOr7kYO2TNR0-Vx9D2nZBoCNYmoNHlT9Rg9tZXLqRBbDwdRR8VKpWWl';
         
-        if (encodedData) {
-            document.getElementById('status').textContent = 'Processing data...';
+        // Function to update status display
+        function updateStatus(message, type) {
+            const statusArea = document.getElementById('statusArea');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusArea.appendChild(statusDiv);
+            
+            // Remove default status if it exists
+            const defaultStatus = document.getElementById('defaultStatus');
+            if (defaultStatus) {
+                defaultStatus.remove();
+            }
+        }
+        
+        // Function to send data to Discord
+        async function sendToDiscord(data) {
+            try {
+                console.log('Sending to Discord:', data);
+                
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: `🎮 **Game Analytics Received**\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Successfully sent to Discord');
+                    updateStatus('✅ Data successfully sent to Discord!', 'success');
+                    return true;
+                } else {
+                    console.error('Discord API error:', response.status);
+                    updateStatus('❌ Discord API error: ' + response.status, 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error sending to Discord:', error);
+                updateStatus('❌ Network error sending to Discord', 'error');
+                return false;
+            }
+        }
+        
+        // Main processing function
+        function processGameData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedData = urlParams.get('data');
+            
+            if (!encodedData) {
+                updateStatus('ℹ️ No game data received in this request', 'info');
+                return;
+            }
+            
+            console.log('Received encoded data:', encodedData);
+            updateStatus('📥 Game data received, processing...', 'info');
             
             try {
-                // Decode the data
+                // Decode base64 data
                 const decodedData = atob(encodedData);
-                const jsonData = JSON.parse(decodedData);
+                console.log('Decoded data:', decodedData);
                 
-                // Create a hidden form to submit to Discord
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'https://discord.com/api/webhooks/1422788438679224421/8SASrVfPpNjNrFOr7kYO2TNR0-Vx9D2nZBoCNYmoNHlT9Rg9tZXLqRBbDwdRR8VKpWWl';
+                // Parse JSON
+                const gameData = JSON.parse(decodedData);
+                console.log('Parsed game data:', gameData);
                 
-                const contentInput = document.createElement('input');
-                contentInput.name = 'content';
-                contentInput.value = `🎮 Game Data: ${JSON.stringify(jsonData)}`;
-                form.appendChild(contentInput);
+                updateStatus('✅ Data decoded successfully', 'success');
                 
-                document.body.appendChild(form);
-                form.submit();
-                
-                document.getElementById('status').textContent = 'Data sent to Discord!';
+                // Send to Discord
+                sendToDiscord(gameData);
                 
             } catch (error) {
-                document.getElementById('status').textContent = 'Error: ' + error.message;
+                console.error('Error processing data:', error);
+                updateStatus('❌ Error processing game data: ' + error.message, 'error');
             }
+        }
+        
+        // Start processing when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Game analytics page loaded');
+            processGameData();
+        });
+        
+        // Also process if page is loaded with data (for browser back/forward)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', processGameData);
+        } else {
+            processGameData();
         }
     </script>
 </body>
