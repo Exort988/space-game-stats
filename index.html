@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game API</title>
+</head>
+<body>
+    <script>
+        // This JavaScript runs when someone visits the page
+        function sendToDiscord(data) {
+            // YOUR ACTUAL DISCORD WEBHOOK GOES HERE
+            const webhookURL = 'https://discord.com/api/webhooks/1422725446964871218/gLDKMxrWbkJJ8S8698yjb77uRN35w4ZAMGIvD0vyTOpIFgMQPvqsiVd-s2VyfoMj_EyC';
+            
+            // Create the Discord message
+            const message = {
+                content: `🎮 Game Data Received:\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
+            };
+            
+            // Send to Discord
+            fetch(webhookURL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message)
+            }).then(response => {
+                console.log('Data sent to Discord');
+            }).catch(error => {
+                console.log('Error sending to Discord');
+            });
+        }
+        
+        // Get data from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameData = urlParams.get('data');
+        
+        if (gameData) {
+            try {
+                // Decode the base64 data
+                const decodedData = atob(gameData);
+                const jsonData = JSON.parse(decodedData);
+                
+                // Send to Discord
+                sendToDiscord(jsonData);
+                
+                // Show success message
+                document.body.innerHTML = '<h1>Game Analytics Received</h1><p>Thank you for playing!</p>';
+            } catch (error) {
+                document.body.innerHTML = '<h1>Error Processing Data</h1>';
+            }
+        } else {
+            document.body.innerHTML = '<h1>Game Analytics Server</h1><p>Server is running...</p>';
+        }
+    </script>
+</body>
+</html>
